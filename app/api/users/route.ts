@@ -1,4 +1,4 @@
-import connectMongoDB from "@/lib/connectMongo";
+import connectMongoDB from "@/app/lib/connectMongo";
 import User from "@/models/Users";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -17,13 +17,25 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(req: NextRequest, res: NextResponse) {
   try {
     await connectMongoDB();
 
-    const body = await request.json()
+    const body = await req.json()
 
-    const user = await User.create(body);
+    const name = body.username.replace(/\s+/g, "");
+
+    const newUserObject = {
+      username: name,
+    };
+
+    const userExists = await User.findOne({username: name});
+
+    if (userExists) {
+      return NextResponse.json(userExists, {status: 200});
+    }
+
+    const user = await User.create(newUserObject);
 
     return NextResponse.json(user, {status: 201});
   } catch (error) {
